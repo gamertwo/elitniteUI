@@ -1,0 +1,148 @@
+/* --- Layout --- */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  padding: 20px 0;
+}
+
+/* --- Card --- */
+.card {
+  position: relative;
+  padding: 20px;
+  border-radius: 16px;
+  background: #060010;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.card:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* --- Text auto-hide effect --- */
+.card--text-autohide .card__content {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.card--text-autohide:hover .card__content {
+  opacity: 0.65;
+}
+
+/* --- Border Glow --- */
+.card--border-glow {
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 0 25px rgba(var(--glow-color, 132, 0, 255), 0.2);
+  transition: box-shadow 0.25s ease;
+}
+
+.card--border-glow:hover {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset,
+    0 0 40px rgba(var(--glow-color, 132, 0, 255), 0.35);
+}
+
+/* --- Card Content --- */
+.card__header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.card__label {
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(var(--glow-color, 132, 0, 255), 0.15);
+  color: rgba(var(--glow-color, 132, 0, 255), 1);
+}
+
+.card__title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: #fff;
+}
+
+.card__description {
+  font-size: 14px;
+  line-height: 1.4;
+  opacity: 0.75;
+  color: #ddd;
+  margin: 0;
+}
+
+/* --- Particle container & particle --- */
+.particle-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.particle {
+  pointer-events: none;
+  position: absolute;
+  border-radius: 50%;
+}
+
+/* --- Glow variables from spotlight --- */
+.card {
+  --glow-x: 50%;
+  --glow-y: 50%;
+  --glow-intensity: 0;
+  --glow-radius: 300px;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle var(--glow-radius) at var(--glow-x) var(--glow-y),
+    rgba(var(--glow-color, 132, 0, 255), calc(var(--glow-intensity) * 0.5)),
+    transparent 80%
+  );
+  opacity: var(--glow-intensity);
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* --- Spotlight effect --- */
+.global-spotlight {
+  pointer-events: none;
+}
+
+/* --- Animation helpers --- */
+@keyframes float {
+  0%, 100% { transform: translateY(0) }
+  50% { transform: translateY(-4px) }
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .card-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .card__title {
+    font-size: 18px;
+  }
+
+  .card__description {
+    font-size: 13px;
+  }
+}

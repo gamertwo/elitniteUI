@@ -1,0 +1,85 @@
+/* Tailwind directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design tokens for elitnite */
+:root {
+  --bg: #000000;
+  --surface: #0A0A0A;
+  --text: rgba(255,255,255,0.90);
+  --muted: rgba(255,255,255,0.70);
+  --border: rgba(255,255,255,1);
+  --ring: rgba(255,255,255,0.80);
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Shared focus ring: crisp white outline with ring */
+.elit-outline {
+  border: 1.5px solid var(--border);
+  outline: none;
+}
+.elit-outline:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+/* Panels / menus subtle glow when open */
+.elit-panel {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--elit-shadow, 0 8px 24px rgba(255,255,255,0.06));
+}
+
+/* Open/close micro-animations (pure CSS) */
+.menu-enter {
+  opacity: 0;
+  transform: translateY(4px) scale(0.98);
+}
+.menu-enter-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity 120ms ease, transform 140ms var(--ease, cubic-bezier(0.22,1,0.36,1));
+}
+.menu-exit {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.menu-exit-active {
+  opacity: 0;
+  transform: translateY(2px) scale(0.98);
+  transition: opacity 100ms ease, transform 100ms ease;
+}
+
+/* Pills for MultiSelect tags */
+.elit-pill {
+  border: 1.5px solid var(--border);
+  border-radius: 9999px;
+  padding: 2px 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* Separator */
+.elit-sep {
+  height: 1px;
+  background: rgba(255,255,255,0.22);
+}
+
+/* For highlighting matches in Combobox results */
+mark.elit {
+  background: transparent;
+  color: #fff;
+  border-bottom: 1px dotted rgba(255,255,255,0.9);
+}
+
+/* Scrollbars kept minimal & on-brand */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 999px; }
+*::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
