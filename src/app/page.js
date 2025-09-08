@@ -139,7 +139,7 @@ export default function HomePage() {
         <footer className="mt-16 pb-8">
           <div className="text-center">
             <p className="text-neutral-500 text-sm">
-              © 2024 My Next.js App. Built with Next.js 14.
+              © 2025 My Next.js App. Built with Next.js 14.
             </p>
           </div>
         </footer>
