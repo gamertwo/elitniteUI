@@ -35,9 +35,20 @@ export default function HomePage() {
     {
       title: 'Tooltips',
       href: '/tooltips',
-      description: 'Flexible plans for every budget'
+      // description: 'Flexible plans for every budget'
+    },
+    {
+      title: 'Navbar',
+      href: "/nav",
+    },
+     {
+      title: 'Tabs',
+      href: "/tabs",
+    },
+     {
+      title: 'Card 2nd',
+      href: "/card-two",
     }
-    // Add new pages here - just add objects with title, href, and description
   ];
 
   const [query, setQuery] = useState("");
@@ -122,50 +133,7 @@ export default function HomePage() {
 
         </section>
 
-        {/* Quick Stats */}
-        <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-3">
-          <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-neutral-900">Performance</div>
-              <span className="px-2 py-1 text-xs rounded-full ring-1 bg-emerald-50 text-emerald-700 ring-emerald-200">
-                Fast
-              </span>
-            </div>
-            <div className="mt-2 text-xs text-neutral-500">Lightning Speed</div>
-            <div className="mt-3 flex items-center justify-between">
-              <div className="text-sm font-medium text-neutral-900">Next.js 14</div>
-              <div className="text-xs text-neutral-500">2025-09-08</div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-neutral-900">Security</div>
-              <span className="px-2 py-1 text-xs rounded-full ring-1 bg-indigo-50 text-indigo-700 ring-indigo-200">
-                Secure
-              </span>
-            </div>
-            <div className="mt-2 text-xs text-neutral-500">Enterprise Grade</div>
-            <div className="mt-3 flex items-center justify-between">
-              <div className="text-sm font-medium text-neutral-900">SSL Ready</div>
-              <div className="text-xs text-neutral-500">2025-09-08</div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-neutral-900">Design</div>
-              <span className="px-2 py-1 text-xs rounded-full ring-1 bg-amber-50 text-amber-700 ring-amber-200">
-                Modern
-              </span>
-            </div>
-            <div className="mt-2 text-xs text-neutral-500">Mobile First</div>
-            <div className="mt-3 flex items-center justify-between">
-              <div className="text-sm font-medium text-neutral-900">Responsive</div>
-              <div className="text-xs text-neutral-500">2025-09-08</div>
-            </div>
-          </div>
-        </div>
+     
 
         {/* Footer */}
         <footer className="mt-16 pb-8">

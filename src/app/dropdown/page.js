@@ -1,197 +1,389 @@
 // app/page.js
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-/* ========================================================================== */
-/*                                     CARDS                                  */
-/* ========================================================================== */
+/* ------------------------------- DATA -------------------------------- */
+const ALL_TOOLS = [
+  { id: "figma", label: "Figma", icon: FigmaIcon, badge: "1–4" },
+  { id: "ps", label: "Photoshop", icon: PsIcon },
+  { id: "ai", label: "Illustrator", icon: AiIcon },
+  { id: "id", label: "InDesign", icon: IdIcon, disabled: true },
+  { id: "ae", label: "After Effects", icon: AeIcon },
+  { id: "pr", label: "Premiere Pro", icon: PrIcon },
+];
+
 export default function Page() {
+  const [anyOpen, setAnyOpen] = useState(false);
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-neutral-100/70">
+      {/* content container centered */}
       <div className="mx-auto max-w-6xl px-6 md:px-10 pt-10 md:pt-14">
-        <h1 className="text-4xl font-extrabold tracking-tight mb-8 text-neutral-900 ml-95">
-          Premium <span className="text-indigo-600">Cards</span>
+        <h1 className="text-4xl font-extrabold tracking-tight mb-8 text-neutral-900">
+          Different <span className="text-indigo-600">Dropdowns</span>
         </h1>
 
-        {/* PREVIEW GRID */}
-        <div className="mx-auto w-full md:w-[88%] lg:w-[78%] grid gap-10 md:grid-cols-2 mb-20">
-          <Card variant="depth" />
-          <Card variant="minimal" />
-          <Card variant="glass" />
-          <Card variant="bold" />
-          <Card variant="media" />
-          <Card variant="stats" />
+        {/* DROPDOWNS */}
+        <div
+          className={`mx-auto w-full md:w-[80%] lg:w-[70%] 
+                      grid md:grid-cols-2 gap-10 transition-[margin] duration-300
+                      ${anyOpen ? "mb-48" : "mb-20"}`}
+        >
+          <Dropdown
+            label="Tools"
+            description="Choose your primary design app"
+            items={ALL_TOOLS}
+            defaultValue="ps"
+            variant="depth"
+            onOpenChange={setAnyOpen}
+          />
+          <Dropdown
+            label="Tools"
+            description="Minimal outline with right accent"
+            items={ALL_TOOLS}
+            defaultValue="ps"
+            variant="minimal"
+            onOpenChange={setAnyOpen}
+          />
+          <Dropdown
+            label="Tools"
+            description="Shows badges and hover tags"
+            items={ALL_TOOLS}
+            defaultValue="ps"
+            variant="tagged"
+            onOpenChange={setAnyOpen}
+          />
+          <Dropdown
+            label="Tools"
+            description="Bold outline + custom scrollbar"
+            items={ALL_TOOLS}
+            defaultValue="ps"
+            variant="bold"
+            onOpenChange={setAnyOpen}
+          />
         </div>
 
-        {/* CODEPEN STYLE VIEWER */}
+        {/* CODEPEN — STICKY & LOWER */}
         <div className="relative">
+          {/* the sticky wrapper makes the codepen sit low on the screen
+              and still move when the dropdown region grows */}
           <div className="sticky top-[calc(100vh-360px)]">
-            <CardsCodeShowcase />
+            <DropdownCodeShowcase />
           </div>
         </div>
       </div>
+
+      {/* global utilities */}
+      <style jsx global>{`
+        .dd-scroll::-webkit-scrollbar {
+          width: 7px;
+        }
+        .dd-scroll::-webkit-scrollbar-thumb {
+          background: rgba(67, 56, 202, 0.35);
+          border-radius: 9999px;
+        }
+        .dd-pop {
+          filter: drop-shadow(0 16px 40px rgba(0, 0, 0, 0.12))
+            drop-shadow(0 3px 8px rgba(0, 0, 0, 0.05));
+        }
+        .glass {
+          backdrop-filter: blur(8px);
+        }
+        /* ensure selected line text is black */
+        .dd-item[aria-selected="true"] .dd-label {
+          color: #000;
+        }
+      `}</style>
     </main>
   );
 }
 
-/* ---------------------------------- CARD --------------------------------- */
-function Card({ variant = "depth" }) {
-  const v = variants(variant);
+/* ------------------------------- DROPDOWN ------------------------------- */
+function Dropdown({
+  label,
+  description,
+  items,
+  defaultValue,
+  variant = "depth",
+  onOpenChange,
+}) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(defaultValue ?? items[0]?.id);
+  const [active, setActive] = useState(
+    Math.max(0, items.findIndex((i) => i.id === (defaultValue ?? items[0]?.id)))
+  );
+  const [query, setQuery] = useState("");
+  const rootRef = useRef(null);
+  const listRef = useRef(null);
+
+  // outside click
+  useEffect(() => {
+    const onClick = (e) => {
+      if (!rootRef.current?.contains(e.target)) setOpen(false);
+    };
+    window.addEventListener("click", onClick);
+    return () => window.removeEventListener("click", onClick);
+  }, []);
+
+  // inform parent when open changes
+  useEffect(() => {
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
+
+  // keep active in view
+  useEffect(() => {
+    if (!open) return;
+    const el = listRef.current?.querySelector(`[data-idx="${active}"]`);
+    el?.scrollIntoView({ block: "nearest" });
+  }, [open, active]);
+
+  const selected = items.find((i) => i.id === value);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? items.filter((i) => i.label.toLowerCase().includes(q)) : items;
+  }, [items, query]);
+
+  const styles = getVariant(variant);
 
   return (
-    <article className={v.wrapper}>
-      {/* media header (optional, removed real image → replaced with gray box) */}
-      {v.media && (
-        <div className={v.mediaWrap}>
-          <div className="h-40 w-full bg-neutral-200 flex items-center justify-center text-neutral-500 text-sm">
-            Placeholder
-          </div>
-          {variant === "media" && (
-            <span className="absolute top-3 left-3 text-[11px] px-2 py-0.5 rounded-full bg-white/90 text-black shadow">
-              Featured
-            </span>
+    <div className="w-full" ref={rootRef}>
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <label className="block text-xs font-medium text-neutral-600">{label}</label>
+          {description && (
+            <p className="text-[11px] text-neutral-500 mt-0.5">{description}</p>
           )}
         </div>
-      )}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setValue("");
+            setQuery("");
+          }}
+          className="text-xs text-neutral-500 hover:text-neutral-900 underline decoration-dotted"
+        >
+          Clear
+        </button>
+      </div>
 
-      {/* content */}
-      <div className={v.body}>
-        <div className="flex items-start gap-3">
-          <DefaultAvatar />
-          <div className="min-w-0">
-            <h3 className="text-black font-semibold truncate">Default User</h3>
-            <p className="text-sm text-neutral-500 truncate">
-              Example user profile description
-            </p>
-          </div>
+      {/* Trigger */}
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className={`group relative w-full flex items-center justify-between ${styles.trigger}`}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          {selected?.icon && <selected.icon className="w-5 h-5 opacity-90" />}
+          {/* always black text on trigger */}
+          <span className="truncate text-black">{selected?.label ?? "Select.."}</span>
         </div>
 
-        <p className="text-sm text-neutral-700 mt-4">
-          This is a default card layout with placeholder visuals for user or content. Replace with real data when needed.
-        </p>
+        <div className="flex items-center gap-2">
+          {styles.accent && <span className={styles.accent} />}
+          <Chevron className={`transition-transform ${open ? "rotate-180" : ""}`} />
+        </div>
 
-        {variant === "stats" ? (
-          <div className="mt-5 grid grid-cols-3 gap-3">
-            <Stat label="Posts" value="42" />
-            <Stat label="Followers" value="1.2k" />
-            <Stat label="Following" value="364" />
+        {styles.ring && <span className={styles.ring} aria-hidden />}
+      </button>
+
+      {/* Popover */}
+      {open && (
+        <div className={`dd-pop ${styles.pop} mt-2`}>
+          <div className="px-3 pt-3">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200">
+              <SearchIcon className="w-4 h-4 text-neutral-500" />
+              <input
+                placeholder="Search tools…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full bg-transparent outline-none text-sm text-neutral-900"
+              />
+            </div>
           </div>
-        ) : (
-          <div className="mt-5 flex items-center gap-3">
-            <button className={v.primaryBtn}>Message</button>
-            <button className={v.secondaryBtn}>Profile</button>
-          </div>
-        )}
-      </div>
-    </article>
-  );
-}
 
-/* ---------------------------- Default Avatar ---------------------------- */
-function DefaultAvatar() {
-  return (
-    <div className="w-10 h-10 rounded-full bg-neutral-300 flex items-center justify-center text-neutral-600 text-xs font-bold">
-      U
+          <ul
+            role="listbox"
+            ref={listRef}
+            tabIndex={-1}
+            className="dd-scroll max-h-56 overflow-y-auto p-2"
+          >
+            {filtered.map((item, idx) => {
+              const isSelected = value === item.id;
+              const isDisabled = !!item.disabled;
+              return (
+                <li
+                  key={item.id}
+                  role="option"
+                  aria-selected={isSelected}
+                  data-idx={idx}
+                  aria-disabled={isDisabled}
+                  onMouseEnter={() => setActive(idx)}
+                  onClick={() => !isDisabled && (setValue(item.id), setOpen(false))}
+                  className={`dd-item group flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl cursor-pointer
+                    ${isDisabled ? "opacity-40 cursor-not-allowed" : "hover:bg-neutral-100"}
+                    ${isSelected ? "bg-indigo-50 ring-1 ring-indigo-200" : ""}`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {item.icon && <item.icon className="w-5 h-5" />}
+                    <div className="min-w-0">
+                      {/* label is black by default */}
+                      <div className="dd-label text-sm truncate text-black">
+                        {item.label}
+                      </div>
+                      <div className="text-[11px] text-neutral-500">
+                        {helperText(item.id)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {item.badge && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-600 text-white">
+                        {item.badge}
+                      </span>
+                    )}
+                    {isSelected && <CheckIcon className="w-4 h-4" />}
+                  </div>
+                </li>
+              );
+            })}
+
+            {!filtered.length && (
+              <div className="px-3 py-6 text-sm text-neutral-500">No results</div>
+            )}
+
+            <div className="h-px bg-neutral-200 my-2" />
+            <button
+              className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-neutral-100 flex items-center gap-2"
+              onClick={() => alert("Manage tools clicked")}
+            >
+              <SettingsIcon className="w-4 h-4" />
+              Manage tools
+            </button>
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
 
-
-function Avatar() {
-  return (
-    <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-white shadow">
-      <img
-        src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop"
-        alt="Avatar"
-        className="w-full h-full object-cover"
-      />
-      <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white" />
-    </div>
-  );
-}
-
-function Stat({ label, value }) {
-  return (
-    <div className="rounded-lg bg-neutral-50 border border-neutral-200 py-3 text-center">
-      <div className="text-black font-semibold">{value}</div>
-      <div className="text-[11px] text-neutral-500">{label}</div>
-    </div>
-  );
-}
-
-/* ------------------------------- VARIANTS -------------------------------- */
-function variants(variant) {
+/* ----------------------------- VARIANT STYLES ----------------------------- */
+function getVariant(variant) {
   switch (variant) {
+    case "depth":
+      return {
+        trigger:
+          "relative rounded-2xl text-sm px-4 py-3 bg-white/90 glass " +
+          "border border-transparent p-[1.5px] " +
+          "shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] " +
+          "bg-gradient-to-b from-white to-neutral-50 " +
+          "hover:shadow-xl hover:shadow-indigo-200/50 transition-all",
+        pop:
+          "w-full bg-white rounded-2xl border border-neutral-200 overflow-hidden",
+        accent: "block h-5 w-1 rounded-full bg-indigo-500/70",
+        ring: "pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-black/5",
+      };
     case "minimal":
       return {
-        wrapper:
-          "rounded-2xl border border-neutral-200 bg-white text-black overflow-hidden",
-        body: "p-5",
-        primaryBtn:
-          "px-3.5 py-2 rounded-lg bg-neutral-900 text-white hover:bg-black transition",
-        secondaryBtn:
-          "px-3.5 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-100 transition",
+        trigger:
+          "rounded-xl border border-neutral-300 px-4 py-3 text-sm bg-white hover:shadow-md transition-shadow",
+        pop: "w-full bg-white rounded-xl border border-neutral-200 overflow-hidden",
+        accent: "block h-4 w-1 rounded bg-neutral-400",
       };
-    case "glass":
+    case "tagged":
       return {
-        wrapper:
-          "rounded-2xl border border-white/30 bg-white/60 backdrop-blur-lg text-black overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,.08)]",
-        body: "p-5",
-        primaryBtn:
-          "px-3.5 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition shadow",
-        secondaryBtn:
-          "px-3.5 py-2 rounded-lg border border-white/50 bg-white/40 hover:bg-white/70 transition",
+        trigger:
+          "rounded-2xl border border-neutral-200 px-4 py-3 text-sm bg-white shadow-sm hover:shadow-lg transition-shadow",
+        pop: "w-full bg-white rounded-2xl border border-neutral-200 overflow-hidden",
       };
     case "bold":
       return {
-        wrapper:
-          "rounded-2xl bg-indigo-600 text-white overflow-hidden shadow-xl",
-        body: "p-5",
-        primaryBtn:
-          "px-3.5 py-2 rounded-lg bg-white text-indigo-700 font-semibold hover:bg-yellow-300 hover:text-black transition",
-        secondaryBtn:
-          "px-3.5 py-2 rounded-lg bg-indigo-500/40 border border-white/30 hover:bg-indigo-500/60 transition",
+        trigger:
+          "rounded-2xl border-2 border-indigo-300 px-4 py-3 text-sm bg-white hover:shadow-lg transition-shadow",
+        pop: "w-full bg-white rounded-2xl border border-indigo-200 overflow-hidden",
+        accent: "block h-4 w-1 rounded bg-indigo-500",
       };
-    case "media":
-      return {
-        wrapper:
-          "rounded-2xl border border-neutral-200 bg-white text-black overflow-hidden",
-        mediaWrap: "relative",
-        media: "h-40 w-full object-cover",
-        body: "p-5",
-        primaryBtn:
-          "px-3.5 py-2 rounded-lg bg-neutral-900 text-white hover:bg-black transition",
-        secondaryBtn:
-          "px-3.5 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-100 transition",
-      };
-    case "stats":
-      return {
-        wrapper:
-          "rounded-2xl border border-neutral-200 bg-white text-black overflow-hidden",
-        body: "p-5",
-        primaryBtn:
-          "px-3.5 py-2 rounded-lg bg-neutral-900 text-white hover:bg-black transition",
-        secondaryBtn:
-          "px-3.5 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-100 transition",
-      };
-    default: // depth
-      return {
-        wrapper:
-          "rounded-2xl bg-white text-black overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,.08)] border border-neutral-100",
-        body: "p-5",
-        primaryBtn:
-          "px-3.5 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition shadow",
-        secondaryBtn:
-          "px-3.5 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-100 transition",
-      };
+    default:
+      return getVariant("depth");
   }
 }
 
-/* ========================================================================== */
-/*                         CODEPEN-LIKE CODE VIEWER                           */
-/* ========================================================================== */
-function CardsCodeShowcase() {
+/* --------------------------- HELPERS & ICONS --------------------------- */
+function helperText(id) {
+  switch (id) {
+    case "figma":
+      return "Best for UI systems";
+    case "ps":
+      return "Photo & compositing";
+    case "ai":
+      return "Vector illustrations";
+    case "id":
+      return "Layout & publishing";
+    case "ae":
+      return "Motion graphics";
+    case "pr":
+      return "Video editing";
+    default:
+      return "";
+  }
+}
+
+function Chevron({ className = "" }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" className={className}>
+      <path
+        d="M6.5 8l3.5 3.5L13.5 8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+function CheckIcon({ className = "" }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" className={className}>
+      <path d="M5 10.5l3 3 7-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+function SearchIcon({ className = "" }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none">
+      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M20 20l-3.2-3.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+function SettingsIcon({ className = "" }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none">
+      <path d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M19.4 15a7.8 7.8 0 00.1-6l2-1.4-2-3.4-2.3 1a8 8 0 00-4.4-1.2l-.5-2.6h-4l-.5 2.6A8 8 0 005.8 5.2l-2.3-1L1.5 7.6l2 1.4a7.8 7.8 0 000 6l-2 1.4 2 3.4 2.3-1A8 8 0 0012 21.2l.5 2.6h4l.5-2.6a8 8 0 004.3-2.2l2.3 1 2-3.4L19.5 15" stroke="currentColor" strokeWidth=".8" opacity=".4"/>
+    </svg>
+  );
+}
+
+function IconBox({ letters, className = "" }) {
+  return (
+    <div className={`w-5 h-5 rounded-[4px] grid place-items-center text-[10px] font-bold text-white ${className}`}>
+      {letters}
+    </div>
+  );
+}
+function FigmaIcon(props){return <IconBox {...props} letters="Fg" className="bg-pink-500" />;}
+function PsIcon(props){return <IconBox {...props} letters="Ps" className="bg-blue-600" />;}
+function AiIcon(props){return <IconBox {...props} letters="Ai" className="bg-orange-500" />;}
+function IdIcon(props){return <IconBox {...props} letters="Id" className="bg-fuchsia-600" />;}
+function AeIcon(props){return <IconBox {...props} letters="Ae" className="bg-indigo-700" />;}
+function PrIcon(props){return <IconBox {...props} letters="Pr" className="bg-violet-600" />;}
+
+/* ----------------------- CODEPEN-LIKE CODE VIEWER ---------------------- */
+function DropdownCodeShowcase() {
   const [activeTab, setActiveTab] = useState("react");
   const codeBlocks = useMemo(
     () => ({ react: REACT_CODE, css: CSS_CODE, html: HTML_CODE, js: JS_CODE }),
@@ -207,21 +399,21 @@ function CardsCodeShowcase() {
 
   return (
     <div className="w-[92%] md:w-full mx-auto bg-neutral-950 rounded-xl overflow-hidden shadow-2xl">
-      {/* header */}
       <div className="bg-neutral-900 px-6 py-4 border-b border-neutral-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 bg-red-500 rounded-full" />
           <span className="w-3 h-3 bg-yellow-500 rounded-full" />
           <span className="w-3 h-3 bg-green-500 rounded-full" />
         </div>
-        <h2 className="text-white font-mono text-sm md:text-base">ELITNITE • Card Components</h2>
+        <h2 className="text-white font-mono text-sm md:text-base">
+          ELITNITE • Premium Dropdowns
+        </h2>
         <div className="flex items-center gap-2 text-neutral-400 text-sm">
           <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
           Live
         </div>
       </div>
 
-      {/* tabs */}
       <div className="flex bg-neutral-900 border-b border-neutral-800">
         {tabs.map((t) => (
           <button
@@ -239,7 +431,6 @@ function CardsCodeShowcase() {
         ))}
       </div>
 
-      {/* code area */}
       <div className="bg-neutral-950 p-6 max-h-96 overflow-y-auto">
         <pre className="text-xs md:text-sm leading-relaxed">
           <code
@@ -251,183 +442,164 @@ function CardsCodeShowcase() {
         </pre>
       </div>
 
-      {/* footer */}
       <div className="bg-neutral-900 px-6 py-3 text-neutral-400 text-sm flex items-center justify-between">
-        <span>✨ Depth • Minimal • Glass • Bold • Media • Stats</span>
-        <span className="hidden sm:block">🖼️ Images • 📊 Metrics • 🎛️ CTAs</span>
+        <span>✨ Depth, glass, search, badges, disabled states</span>
+        <span className="hidden sm:block">⌨️ Arrow keys • Enter • Esc</span>
       </div>
     </div>
   );
 }
 
 /* ------------------------------ CODE STRINGS ----------------------------- */
-const REACT_CODE = `// Reusable Card with variants (depth, minimal, glass, bold, media, stats)
-export function Card({ variant = "depth" }) {
-  const v = variants(variant);
+/* ------------------------------ CODE STRINGS ----------------------------- */
+const REACT_CODE = `// Depthy Dropdown with search, badges & disabled items
+"use client";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+const items = [
+  { id: "figma", label: "Figma", badge: "1–4" },
+  { id: "ps", label: "Photoshop" },
+  { id: "ai", label: "Illustrator" },
+  { id: "id", label: "InDesign", disabled: true },
+  { id: "ae", label: "After Effects" },
+  { id: "pr", label: "Premiere Pro" },
+];
+
+export default function Dropdown() {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState("ps");
+  const [query, setQuery] = useState("");
+  const rootRef = useRef(null);
+
+  useEffect(() => {
+    const close = (e) => !rootRef.current?.contains(e.target) && setOpen(false);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? items.filter((i) => i.label.toLowerCase().includes(q)) : items;
+  }, [query]);
+
   return (
-    <article className={v.wrapper}>
-      {v.media && (
-        <div className={v.mediaWrap}>
-          <img src="/cover.jpg" alt="Cover" className={v.media} />
+    <div ref={rootRef} className="relative w-64">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full rounded-2xl border px-4 py-2 bg-white shadow-sm text-left"
+      >
+        {items.find((i) => i.id === value)?.label ?? "Select.."}
+      </button>
+
+      {open && (
+        <div className="absolute mt-2 w-full rounded-2xl border bg-white shadow-lg">
+          <input
+            placeholder="Search tools…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="m-2 w-[calc(100%-1rem)] rounded-lg border px-2 py-1 text-sm"
+          />
+          <ul className="max-h-48 overflow-y-auto">
+            {filtered.map((i) => (
+              <li
+                key={i.id}
+                className={\`px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer
+                  \${value === i.id ? "bg-indigo-50 font-medium text-black" : ""}
+                  \${i.disabled ? "opacity-40 cursor-not-allowed" : ""}\`}
+                onClick={() => !i.disabled && (setValue(i.id), setOpen(false))}
+              >
+                {i.label} {i.badge && <span className="ml-2 text-[10px] bg-indigo-600 text-white px-1.5 py-0.5 rounded-full">{i.badge}</span>}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
-      <div className={v.body}>
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-neutral-200" />
-          <div className="min-w-0">
-            <h3 className="font-semibold truncate">Aurora UI Kit</h3>
-            <p className="text-sm text-neutral-500 truncate">Next.js + Tailwind</p>
-          </div>
-        </div>
-        <p className="text-sm text-neutral-700 mt-4">
-          Build production-grade interfaces faster with polished components.
-        </p>
-        {variant === "stats" ? (
-          <div className="mt-5 grid grid-cols-3 gap-3">
-            <div className="rounded-lg bg-neutral-50 border border-neutral-200 py-3 text-center">
-              <div className="font-semibold">12.4k</div>
-              <div className="text-[11px] text-neutral-500">Users</div>
-            </div>
-            <div className="rounded-lg bg-neutral-50 border border-neutral-200 py-3 text-center">
-              <div className="font-semibold">3.2%</div>
-              <div className="text-[11px] text-neutral-500">Conv.</div>
-            </div>
-            <div className="rounded-lg bg-neutral-50 border border-neutral-200 py-3 text-center">
-              <div className="font-semibold">$84k</div>
-              <div className="text-[11px] text-neutral-500">MRR</div>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-5 flex items-center gap-3">
-            <button className={v.primaryBtn}>Get Started</button>
-            <button className={v.secondaryBtn}>Preview</button>
-          </div>
-        )}
-      </div>
-    </article>
+    </div>
   );
-}
-
-function variants(variant) {
-  switch (variant) {
-    case "minimal":
-      return {
-        wrapper: "rounded-2xl border border-neutral-200 bg-white",
-        body: "p-5",
-        primaryBtn: "px-3.5 py-2 rounded-lg bg-neutral-900 text-white",
-        secondaryBtn: "px-3.5 py-2 rounded-lg border border-neutral-300",
-      };
-    case "glass":
-      return {
-        wrapper: "rounded-2xl border border-white/30 bg-white/60 backdrop-blur-lg",
-        body: "p-5",
-        primaryBtn: "px-3.5 py-2 rounded-lg bg-indigo-600 text-white",
-        secondaryBtn: "px-3.5 py-2 rounded-lg border border-white/50 bg-white/40",
-      };
-    case "bold":
-      return {
-        wrapper: "rounded-2xl bg-indigo-600 text-white",
-        body: "p-5",
-        primaryBtn: "px-3.5 py-2 rounded-lg bg-white text-indigo-700 font-semibold",
-        secondaryBtn: "px-3.5 py-2 rounded-lg bg-indigo-500/40 border border-white/30",
-      };
-    case "media":
-      return {
-        wrapper: "rounded-2xl border border-neutral-200 bg-white overflow-hidden",
-        mediaWrap: "relative",
-        media: "h-40 w-full object-cover",
-        body: "p-5",
-        primaryBtn: "px-3.5 py-2 rounded-lg bg-neutral-900 text-white",
-        secondaryBtn: "px-3.5 py-2 rounded-lg border border-neutral-300",
-      };
-    case "stats":
-      return {
-        wrapper: "rounded-2xl border border-neutral-200 bg-white",
-        body: "p-5",
-        primaryBtn: "px-3.5 py-2 rounded-lg bg-neutral-900 text-white",
-        secondaryBtn: "px-3.5 py-2 rounded-lg border border-neutral-300",
-      };
-    default:
-      return {
-        wrapper: "rounded-2xl bg-white shadow border border-neutral-100",
-        body: "p-5",
-        primaryBtn: "px-3.5 py-2 rounded-lg bg-indigo-600 text-white",
-        secondaryBtn: "px-3.5 py-2 rounded-lg border border-neutral-300",
-      };
-  }
 }`;
 
-const CSS_CODE = `/* Tailwind utility notes for Cards */
-.card-depth   { @apply rounded-2xl bg-white shadow border border-neutral-100; }
-.card-minimal { @apply rounded-2xl bg-white border border-neutral-200; }
-.card-glass   { @apply rounded-2xl bg-white/60 border border-white/30 backdrop-blur-lg; }
-.card-bold    { @apply rounded-2xl bg-indigo-600 text-white; }
-.card-media   { @apply rounded-2xl bg-white border overflow-hidden; }
-.card-stats   { @apply rounded-2xl bg-white border; }
+const CSS_CODE = `/* Tailwind utility classes used */
+.trigger {
+  @apply rounded-2xl border border-neutral-200 px-4 py-2 bg-white shadow-sm hover:shadow-md transition;
+}
+.popover {
+  @apply mt-2 w-full rounded-2xl border border-neutral-200 bg-white shadow-lg;
+}
+.search {
+  @apply m-2 w-[calc(100%-1rem)] px-2 py-1 text-sm border rounded-lg;
+}
+.row {
+  @apply px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg;
+}
+.row.selected {
+  @apply bg-indigo-50 font-medium text-black;
+}
+.row.disabled {
+  @apply opacity-40 cursor-not-allowed;
+}
+.badge {
+  @apply text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-600 text-white ml-2;
+}`;
 
-.card-title   { @apply font-semibold; }
-.card-sub     { @apply text-sm text-neutral-500; }
-.card-body    { @apply text-sm text-neutral-700; }
-
-.btn-primary  { @apply px-3.5 py-2 rounded-lg bg-indigo-600 text-white; }
-.btn-secondary{ @apply px-3.5 py-2 rounded-lg border border-neutral-300; }`;
-
-const HTML_CODE = `<!-- Static card markup -->
-<article class="card-depth">
-  <div class="p-5">
-    <div class="flex items-start gap-3">
-      <div class="w-10 h-10 rounded-full bg-neutral-200"></div>
-      <div class="min-w-0">
-        <h3 class="card-title">Aurora UI Kit</h3>
-        <p class="card-sub">Next.js + Tailwind</p>
-      </div>
-    </div>
-    <p class="card-body mt-4">
-      Build production-grade interfaces faster with polished components.
-    </p>
-    <div class="mt-5 flex items-center gap-3">
-      <button class="btn-primary">Get Started</button>
-      <button class="btn-secondary">Preview</button>
-    </div>
+const HTML_CODE = `<!-- Structure -->
+<div class="dropdown">
+  <button class="trigger">Photoshop</button>
+  <div class="popover">
+    <input class="search" placeholder="Search tools…" />
+    <ul>
+      <li class="row">Figma <span class="badge">1–4</span></li>
+      <li class="row selected">Photoshop</li>
+      <li class="row">Illustrator</li>
+      <li class="row disabled">InDesign</li>
+      <li class="row">After Effects</li>
+      <li class="row">Premiere Pro</li>
+    </ul>
   </div>
-</article>`;
+</div>`;
 
-const JS_CODE = `// Example: toggle a 'selected' visual on card click
-document.querySelectorAll('article').forEach(card => {
-  card.addEventListener('click', () => {
-    card.classList.toggle('ring-2');
-    card.classList.toggle('ring-indigo-400');
-  });
+const JS_CODE = `// Keyboard helpers
+const button = document.querySelector(".trigger");
+
+button.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowDown") {
+    // focus first list item
+  }
+  if (e.key === "Escape") {
+    // close dropdown
+  }
 });`;
 
-/* --------------------------- Syntax Highlighter --------------------------- */
+
+/* --------------------------- Syntax Highlight --------------------------- */
 function syntaxHighlight(code, language) {
   const patterns = {
     react: [
       { pattern: /\/\*[\s\S]*?\*\//g, class: "text-neutral-500" },
       { pattern: /\/\/.*$/gm, class: "text-neutral-500" },
-      { pattern: /\b(import|export|from|const|let|var|function|class|return|if|else|useState)\b/g, class: "text-purple-400" },
+      { pattern: /\b(import|export|from|const|let|var|function|class|return|if|else|for|while|try|catch|new|this|async|await)\b/g, class: "text-purple-400" },
+      { pattern: /\b(React|useState|useEffect|useMemo|useRef)\b/g, class: "text-cyan-400" },
       { pattern: /'[^']*'|"[^"]*"|`[^`]*`/g, class: "text-green-400" },
-      { pattern: /&lt;[^&]*&gt;/g, class: "text-rose-400" },
       { pattern: /\b\d+\.?\d*\b/g, class: "text-orange-400" },
+      { pattern: /&lt;[^&]*&gt;/g, class: "text-rose-400" },
     ],
     css: [
       { pattern: /\/\*[\s\S]*?\*\//g, class: "text-neutral-500" },
       { pattern: /[.#@][\w-]+/g, class: "text-yellow-400" },
       { pattern: /[\w-]+(?=\s*:)/g, class: "text-blue-400" },
       { pattern: /:[\s]*[^;{]+/g, class: "text-green-400" },
-      { pattern: /@apply|@media|@keyframes/g, class: "text-purple-400" },
+      { pattern: /@keyframes|@media|@import/g, class: "text-purple-400" },
     ],
     html: [
       { pattern: /&lt;[^&]*&gt;/g, class: "text-rose-400" },
-      { pattern: /class="[^"]*"/g, class: "text-green-400" },
+      { pattern: /class="[^"]*"|id="[^"]*"|src="[^"]*"/g, class: "text-green-400" },
       { pattern: /&lt;!--[\s\S]*?--&gt;/g, class: "text-neutral-500" },
     ],
     js: [
       { pattern: /\/\/.*$/gm, class: "text-neutral-500" },
-      { pattern: /\b(class|function|const|let|var|if|else|return|document|querySelector(All)?|addEventListener|toggle)\b/g, class: "text-purple-400" },
+      { pattern: /\b(class|function|const|let|var|if|else|for|while|return|this|new|async|await|import|export|from|default)\b/g, class: "text-purple-400" },
       { pattern: /'[^']*'|"[^"]*"|`[^`]*`/g, class: "text-green-400" },
       { pattern: /\b\d+\.?\d*\b/g, class: "text-orange-400" },
+      { pattern: /\b(document|window|console|setTimeout|setInterval)\b/g, class: "text-cyan-400" },
     ],
   };
 
